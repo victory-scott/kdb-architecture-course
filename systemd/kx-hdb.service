@@ -1,0 +1,31 @@
+[Unit]
+Description=KDB+ HDB (historical database)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+#User=kdb
+#Group=kdb
+EnvironmentFile=/etc/kx/tick.env
+WorkingDirectory=%E{APP_DIR}
+
+# Required env:
+#  - Q_BIN, APP_DIR
+#  - HDB_PORT (e.g., 5012)
+#  - HDB_DIR (DB root containing date partitions)
+
+ExecStart=/bin/sh -lc '\
+  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
+  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
+  test -n "${HDB_DIR}" || { echo "HDB_DIR not set"; exit 1; }; \
+  : "${HDB_PORT:=5012}"; \
+  exec "${Q_BIN}" tick/hdb.q "${HDB_DIR}" -p "${HDB_PORT}"'
+
+Restart=always
+RestartSec=2s
+KillMode=process
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=multi-user.target

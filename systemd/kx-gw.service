@@ -1,0 +1,31 @@
+[Unit]
+Description=KDB+ Gateway
+Requires=kx-rdb.service kx-hdb.service
+After=kx-rdb.service kx-hdb.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+#User=kdb
+#Group=kdb
+EnvironmentFile=/etc/kx/tick.env
+WorkingDirectory=%E{APP_DIR}
+
+# Required env:
+#  - Q_BIN, APP_DIR
+#  - GW_PORT (e.g., 5014)
+# Note: gw.q currently hopen's RDB/HDB on 5011/5012 inside the script.
+
+ExecStart=/bin/sh -lc '\
+  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
+  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
+  : "${GW_PORT:=5014}"; \
+  exec "${Q_BIN}" tick/gw.q -p "${GW_PORT}"'
+
+Restart=always
+RestartSec=2s
+KillMode=process
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=multi-user.target

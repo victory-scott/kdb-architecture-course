@@ -1,0 +1,7 @@
+{
+    "kdb.connectionMap": {
+        "tick/hdb.q": "REPL",
+        "tick/feed.q": "REPL",
+        "tick/sym.q": "REPL"
+    }
+}

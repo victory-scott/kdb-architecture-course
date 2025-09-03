@@ -1,0 +1,34 @@
+[Unit]
+Description=KDB+ RDB (in-memory real-time database)
+Requires=kx-tp.service
+After=kx-tp.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+#User=kdb
+#Group=kdb
+EnvironmentFile=/etc/kx/tick.env
+WorkingDirectory=%E{APP_DIR}
+
+# Required env:
+#  - Q_BIN, APP_DIR
+#  - RDB_PORT (e.g., 5011)
+#  - TP_HOST (default 127.0.0.1), TP_PORT (5010)
+#  - HDB_HOST (default 127.0.0.1), HDB_PORT (5012)
+
+ExecStart=/bin/sh -lc '\
+  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
+  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
+  : "${RDB_PORT:=5011}"; \
+  : "${TP_HOST:=127.0.0.1}"; : "${TP_PORT:=5010}"; \
+  : "${HDB_HOST:=127.0.0.1}"; : "${HDB_PORT:=5012}"; \
+  exec "${Q_BIN}" tick/rdb.q "${TP_HOST}:${TP_PORT}" "${HDB_HOST}:${HDB_PORT}" -p "${RDB_PORT}"'
+
+Restart=always
+RestartSec=2s
+KillMode=process
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=multi-user.target

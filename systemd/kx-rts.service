@@ -1,0 +1,31 @@
+[Unit]
+Description=KDB+ Real-time Store (latest by sym)
+Requires=kx-tp.service
+After=kx-tp.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+#User=kdb
+#Group=kdb
+EnvironmentFile=/etc/kx/tick.env
+WorkingDirectory=%E{APP_DIR}
+
+# Required env:
+#  - Q_BIN, APP_DIR
+#  - RTS_PORT (e.g., 5013)
+# Note: rts.q subscribes to TP at :5010 by default.
+
+ExecStart=/bin/sh -lc '\
+  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
+  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
+  : "${RTS_PORT:=5013}"; \
+  exec "${Q_BIN}" tick/rts.q -p "${RTS_PORT}"'
+
+Restart=always
+RestartSec=2s
+KillMode=process
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,30 @@
+[Unit]
+Description=KDB+ Demo Feed (simulated publisher)
+Requires=kx-tp.service
+After=kx-tp.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+#User=kdb
+#Group=kdb
+EnvironmentFile=/etc/kx/tick.env
+WorkingDirectory=%E{APP_DIR}
+
+# Required env:
+#  - Q_BIN, APP_DIR
+# Note: feed.q internally opens :5010; to make TP address configurable,
+#       adjust the script to read from .z.x or use a wrapper. Defaults assumed.
+
+ExecStart=/bin/sh -lc '\
+  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
+  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
+  exec "${Q_BIN}" tick/feed.q'
+
+Restart=always
+RestartSec=2s
+KillMode=process
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=multi-user.target

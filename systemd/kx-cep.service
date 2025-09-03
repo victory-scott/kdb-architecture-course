@@ -1,0 +1,31 @@
+[Unit]
+Description=KDB+ CEP (rolling stats subscriber)
+Requires=kx-tp.service
+After=kx-tp.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+#User=kdb
+#Group=kdb
+EnvironmentFile=/etc/kx/tick.env
+WorkingDirectory=%E{APP_DIR}
+
+# Required env:
+#  - Q_BIN, APP_DIR
+#  - CEP_PORT (e.g., 5015)
+# Note: cep.q subscribes to TP at :5010 by default.
+
+ExecStart=/bin/sh -lc '\
+  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
+  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
+  : "${CEP_PORT:=5015}"; \
+  exec "${Q_BIN}" tick/cep.q -p "${CEP_PORT}"'
+
+Restart=always
+RestartSec=2s
+KillMode=process
+TimeoutStopSec=5s
+
+[Install]
+WantedBy=multi-user.target
