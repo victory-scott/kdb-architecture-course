@@ -16,3 +16,5 @@ add:{$[(count w x)>i:w[x;;0]?.z.w;.[`.u.w;(x;i;1);union;y];w[x],:enlist(.z.w;y)]
 sub:{if[x~`;:sub[;y]each t];if[not x in t;'x];del[x].z.w;add[x;y]}
 
 end:{(neg union/[w[;;0]])@\:(`.u.end;x)}
+/q tick/u.q
+/  Internal utilities used by tick.q and subscribers. No command-line options.

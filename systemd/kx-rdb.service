@@ -1,34 +1,19 @@
 [Unit]
-Description=KDB+ RDB (in-memory real-time database)
+Description=KX Tickerplant RDB — kxtpstack
+After=kx-tp.service
 Requires=kx-tp.service
-After=kx-tp.service network-online.target
-Wants=network-online.target
 
 [Service]
 Type=simple
-#User=kdb
-#Group=kdb
-EnvironmentFile=/etc/kx/tick.env
-WorkingDirectory=%E{APP_DIR}
-
-# Required env:
-#  - Q_BIN, APP_DIR
-#  - RDB_PORT (e.g., 5011)
-#  - TP_HOST (default 127.0.0.1), TP_PORT (5010)
-#  - HDB_HOST (default 127.0.0.1), HDB_PORT (5012)
-
-ExecStart=/bin/sh -lc '\
-  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
-  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
-  : "${RDB_PORT:=5011}"; \
-  : "${TP_HOST:=127.0.0.1}"; : "${TP_PORT:=5010}"; \
-  : "${HDB_HOST:=127.0.0.1}"; : "${HDB_PORT:=5012}"; \
-  exec "${Q_BIN}" tick/rdb.q "${TP_HOST}:${TP_PORT}" "${HDB_HOST}:${HDB_PORT}" -p "${RDB_PORT}"'
-
-Restart=always
-RestartSec=2s
-KillMode=process
-TimeoutStopSec=5s
+EnvironmentFile=-%h/.config/kxtpstack/common.env
+# MemoryMax=4G
+# CPUQuota=200%
+LimitNOFILE=131072
+ExecStart=/usr/bin/env bash -lc 'exec "${QBIN:-/opt/kx/q}" "${APP_DIR}/tick/rdb.q" -p "${RDB_PORT:-5011}" -tp "${TP_PORT:-5010}" -hdb "${HDB_PORT:-5012}" ${QOPTS}'
+Restart=on-failure
+RestartSec=1
+StandardOutput=journal
+StandardError=journal
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

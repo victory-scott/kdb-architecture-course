@@ -1,4 +1,5 @@
-/ q tick.q sym . -p 5001 </dev/null >foo 2>&1 &
+/q tick.q [options]
+/  -p   <port>         # listening port (handled by q; defaults TP_PORT or 5010)
 /2014.03.12 remove license check
 /2013.09.05 warn on corrupt log
 /2013.08.14 allow <endofday> when -u is set
@@ -22,7 +23,9 @@
 /q tick.q SRC [DST] [-p 5010] [-o h]
 system"l tick/",(src:first .z.x,enlist"sym"),".q"
 
-if[not system"p";system"p 5010"]
+/ if no port already set (via -p), pick from env or default
+envOr:{[k;def] v:getenv k; $[count v; v; def]};
+if[not system"p"; system"p ", envOr["TP_PORT";"5010"]]
 
 \l tick/u.q
 \d .u
@@ -46,6 +49,9 @@ if[not system"t";system"t 1000";
 
 \d .
 .u.tick[src;.z.x 1];
+
+/- service readiness log
+-1 "TP ready on port ",string .z.p;
 
 \
  globals used

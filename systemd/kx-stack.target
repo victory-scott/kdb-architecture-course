@@ -1,8 +1,0 @@
-[Unit]
-Description=KDB+ Tick Stack (TP, RDB, HDB, subscribers, GW, Feed)
-Wants=kx-tp.service kx-rdb.service kx-hdb.service kx-rts.service kx-cep.service kx-gw.service kx-feed.service
-After=network-online.target kx-tp.service kx-rdb.service kx-hdb.service
-
-[Install]
-WantedBy=multi-user.target
-

@@ -1,35 +1,19 @@
 [Unit]
-Description=KDB+ Tickerplant
+Description=KX Tickerplant (tp) — kxtpstack
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 Type=simple
-# Optional: set a dedicated user/group running q
-#User=kdb
-#Group=kdb
-EnvironmentFile=/etc/kx/tick.env
-WorkingDirectory=%E{APP_DIR}
-
-# Required env (override in env file):
-#  - Q_BIN: absolute path to q binary (e.g., /opt/kx/q/l64/q)
-#  - APP_DIR: absolute path to repo root (e.g., /opt/kx/kdb-architecture-course)
-#  - TP_PORT: tickerplant listen port (e.g., 5010)
-#  - TP_LOG_DIR: log/output directory for TP (e.g., ${APP_DIR})
-#  - SCHEMA_NAME: schema module name without .q (default: sym)
-
-ExecStart=/bin/sh -lc '\
-  test -n "${Q_BIN}" -a -x "${Q_BIN}" || { echo "Q_BIN not set/executable"; exit 1; }; \
-  test -n "${APP_DIR}" || { echo "APP_DIR not set"; exit 1; }; \
-  : "${SCHEMA_NAME:=sym}"; \
-  : "${TP_PORT:=5010}"; \
-  : "${TP_LOG_DIR:=${APP_DIR}}"; \
-  exec "${Q_BIN}" tick.q "${SCHEMA_NAME}" "${TP_LOG_DIR}" -p "${TP_PORT}"'
-
-Restart=always
-RestartSec=2s
-KillMode=process
-TimeoutStopSec=5s
+EnvironmentFile=-%h/.config/kxtpstack/common.env
+# MemoryMax=2G
+# CPUQuota=80%
+LimitNOFILE=131072
+ExecStart=/usr/bin/env bash -lc 'exec "${QBIN:-/opt/kx/q}" "${APP_DIR}/tick.q" -p "${TP_PORT:-5010}" ${QOPTS}'
+Restart=on-failure
+RestartSec=1
+StandardOutput=journal
+StandardError=journal
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

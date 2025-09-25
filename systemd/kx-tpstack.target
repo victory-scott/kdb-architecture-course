@@ -1,0 +1,4 @@
+[Unit]
+Description=KX Tickerplant Stack 
+Wants=kx-tp.service kx-rdb.service kx-hdb.service kx-gw.service
+After=kx-tp.service

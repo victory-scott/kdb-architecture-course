@@ -8,14 +8,37 @@ This repo contains sample kdb+ architecture for building a kdb+ application for 
 - If you clone this repository to your local environment, you will need to have kdb+ installed with a valid license and the `q` alias set to invoke kdb+ as per [these instructions](https://code.kx.com/q/learn/install/#step-5-edit-your-profile).
 
 ## 1. Quickstart
+You can run components manually with explicit ports, or rely on environment variables (`TP_PORT`, `RDB_PORT`, `HDB_PORT`, `GW_PORT`). Below shows explicit ports for clarity.
+
 ```
-q tick.q sym . -p 5010 
-q tick/rdb.q -p 5011 
-q tick/feed.q /(or run manual steps)
-q tick/hdb.q sym -p 5012 
-q tick/rts.q -p 5013 
-q tick/gw.q -p 5014 
+# 1) Start tickerplant
+q tick.q -p 5010
+
+# 2) Start RDB (connects to TP)
+q tick/rdb.q -p 5011 -tp 5010
+
+# 3) Start HDB (point to your historical DB directory)
+q tick/hdb.q sym -p 5012
+
+# 4) Start Gateway (connects to RDB and HDB)
+q tick/gw.q -p 5014 -rdb 5011 -hdb 5012
+
+# 5) Start feed (publishes to TP)
+q tick/feed.q -tp 5010
+
+# Optional: Subscribers
+q tick/cep.q -p 5015 -tp 5010
+q tick/rts.q -p 5013 -tp 5010
 ```
+
+## Using systemd (recommended)
+For production, systemd is a solid way to manage q processes because it:
+- Restarts on failure and preserves ordering/dependencies between services.
+- Centralizes configuration via environment files and enforces resource limits.
+- Integrates logging with `journalctl` for easy triage and rotation.
+- Runs as user services without root, or as system services with hardening.
+
+See `systemd/README.md` for setup, commands, and lifecycle management.
 
 ## 2. Adding Data Feed
 To add a new data feed you will need to adjust two files: `sym.q` and `feed.q`.
@@ -37,14 +60,14 @@ With:
 .z.ts:{h_tp"(.u.upd[`trade;(2#.z.n;2?`APPL`MSFT`AMZN`GOOGL`TSLA`META;2?10000f;2?`B`S)])";
       h_tp"(.u.upd[`quote;(2#.z.n;2?`APPL`MSFT`AMZN`GOOGL`TSLA`META;2?10000f;2?10000f;2?500i;2?500i)])"};
 ```       
-Launch the feedhandler:
+Launch the feedhandler (explicit TP port shown):
 ```
-q tick/feed.q
+q tick/feed.q -tp 5010
 ```
 
 ## 3. Real Time Subscriber
 ```
-q tick/cep.q
+q tick/cep.q -p 5015 -tp 5010
 ```
 
 ## 4. Logging & Replay 
@@ -69,7 +92,7 @@ getTradeData:{[sd;ed;ids]
 ```
 Launch gateway
 ```
-q tick/gw.q -p 5014 
+q tick/gw.q -p 5014 -rdb 5011 -hdb 5012
 ```
 And query `getTradeData` from the gateway.
 ```
